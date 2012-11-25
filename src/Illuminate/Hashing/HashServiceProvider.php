@@ -7,12 +7,11 @@ class HashServiceProvider extends ServiceProvider {
 	/**
 	 * Register the service provider.
 	 *
-	 * @param  Illuminate\Foundation\Application  $app
 	 * @return void
 	 */
-	public function register($app)
+	public function register()
 	{
-		$app['hash'] = $app->share(function() { return new BcryptHasher; });
+		$this->app['hash'] = $this->app->share(function() { return new BcryptHasher; });
 	}
 
 }
