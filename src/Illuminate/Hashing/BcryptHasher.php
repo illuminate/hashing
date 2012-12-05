@@ -14,7 +14,7 @@ class BcryptHasher implements HasherInterface {
 	public function make($value, array $options = array())
 	{
 		$rounds  = isset($options['rounds']) ? $options['rounds'] : 10;
-		$version = isset($options['version']) ? $options['version'] : '2y';
+		$version = isset($options['version']) ? $options['version'] : null;
 		$salt 	 = isset($options['salt']) ? $options['salt'] : null;
 
 		// Ensure round value is within the minimum and maximum boundaries.
