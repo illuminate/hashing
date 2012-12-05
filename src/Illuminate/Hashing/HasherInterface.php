@@ -15,10 +15,10 @@ interface HasherInterface {
 	 * Check the given plain value against a hash.
 	 *
 	 * @param  string  $value
-	 * @param  string  $hashedPassword
+	 * @param  string  $hash
 	 * @param  array   $options
 	 * @return bool
 	 */
-	public function check($value, $hashedPassword, array $options = array());
+	public function check($value, $hash, array $options = array());
 
 }
