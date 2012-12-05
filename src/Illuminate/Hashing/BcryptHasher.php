@@ -1,5 +1,7 @@
 <?php namespace Illuminate\Hashing;
 
+use KevinGH\Bcrypt\Bcrypt;
+
 class BcryptHasher implements HasherInterface {
 
 	/**
@@ -11,25 +13,33 @@ class BcryptHasher implements HasherInterface {
 	 */
 	public function make($value, array $options = array())
 	{
-		$rounds = isset($options['rounds']) ? $options['rounds'] : 8;
+		$rounds  = isset($options['rounds']) ? $options['rounds'] : 10;
+		$version = isset($options['version']) ? $options['version'] : null;
+		$salt 	 = isset($options['salt']) ? $options['salt'] : null;
 
-		$work = str_pad($rounds, 2, '0', STR_PAD_LEFT);
-
-		// Bcrypt expects the salt to be 22 base64 encoded characters including dots
-		// and slashes. We will get rid of the plus signs included in the base64
-		// data and replace them all with dots so it's appropriately encoded.
-		if (function_exists('openssl_random_pseudo_bytes'))
-		{
-			$salt = openssl_random_pseudo_bytes(16);
-		}
-		else
-		{
-			$salt = $this->getRandomSalt();
+		// Ensure round value is within the minimum and maximum boundaries.
+		if ($rounds < 4) {
+			$rounds = 4;
+		} elseif ($rounds > 31) {
+			$rounds = 31;
 		}
 
-		$salt = substr(strtr(base64_encode($salt), '+', '.'), 0 , 22);
+		// Setup the BCrypt object.
+		$bcrypt = Bcrypt::create($version === '2a');
 
-		return crypt($value, '$2a$'.$work.'$'.$salt);
+		if (! is_null($rounds)) {
+			$bcrypt->setCost($rounds);
+		}
+
+		if (is_null($salt)) {
+			$bcrypt->setSalt($bcrypt->generateSalt());
+		} elseif (0 === strpos($salt, '$')) {
+			$bcrypt->setEncoded($salt);
+		} else {
+			$bcrypt->setSalt($salt);
+		}
+
+		return $bcrypt($value);
 	}
 
 	/**
@@ -40,21 +50,10 @@ class BcryptHasher implements HasherInterface {
 	 * @param  array   $options
 	 * @return bool
 	 */
-	public function check($value, $hashedPassword, array $options = array())
+	public function check($value, $hash, array $options = array())
 	{
-		return crypt($value, $hashedPassword) === $hashedPassword;
-	}
-
-	/**
-	 * Get a random salt to use during hashing.
-	 *
-	 * @return string
-	 */
-	protected function getRandomSalt()
-	{
-		$pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-		return substr(str_shuffle(str_repeat($pool, 5)), 0, 40);
+		$options = array_merge($options, array('salt' => $hash));
+		return ($hash === $this->make($value, $options));
 	}
 
 }
